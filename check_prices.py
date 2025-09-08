@@ -83,6 +83,11 @@ def compare_prices():
     new_token_amount = eth_quantity * 0.99 * 0.999 * float(eth_price)
     print(new_token_amount)
 
+    if new_token_amount * 1.05 > token_amount:
+        print("Let's go!")
+    else:
+        print("Nothing to see here")
+
 
 if __name__ == "__main__":
     compare_prices()
