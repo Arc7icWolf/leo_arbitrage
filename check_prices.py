@@ -3,10 +3,16 @@ import requests
 from decimal import Decimal
 import configparser
 
-
+'''
 config = configparser.ConfigParser()
 config.read("config.ini")
 user_id = config["DEFAULT"].get("user_id")
+'''
+
+# Get credentias from Secrets
+USER_ID = os.getenv("USER_ID")
+if not USER_ID:
+    raise ValueError("USER_ID not found")
 
 
 def get_response(method, url, json=None):
@@ -71,11 +77,11 @@ def get_prices(tokens):
     return prices
 
 
-def notification(content, user_id):
+def notification(content):
     webhook_url = "https://discord.com/api/webhooks/1359216089023906063/9PLtNmPUoSwm8UUStyxZzpxVjALWFdKcULtRF3kBJVBzBsVywnXZ4OmvInk8Tt5IhQdW"
     message = {
-        "content": f"{content}! <@{user_id}>",
-        "allowed_mentions": {"users": [user_id]},
+        "content": f"{content}! <@{USER_ID}>",
+        "allowed_mentions": {"users": [USER_ID]},
     }
     response = get_response("POST", webhook_url, json=message)
     if response.status_code == 204:
@@ -103,10 +109,10 @@ def compare_prices():
 
     if he_leo_amount > arb_leo_amount * threshold:
         print("HIVE --> LEO --> ARB.LEO --> ETH")
-        notification(f"Buy LEO on H-E, Sell LEO on ARB", user_id)
+        notification(f"Buy LEO on H-E, Sell LEO on ARB")
     elif arb_leo_amount > he_leo_amount * threshold:
         print("ETH --> ARB.LEO --> LEO --> HIVE")
-        notification(f"Buy LEO on ARB, Sell LEO on H-E", user_id)
+        notification(f"Buy LEO on ARB, Sell LEO on H-E")
     else:
         print("Nothing to see here")
 
