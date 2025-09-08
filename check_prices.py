@@ -2,6 +2,7 @@ import json
 import requests
 from decimal import Decimal
 import configparser
+import os
 
 '''
 config = configparser.ConfigParser()
