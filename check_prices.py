@@ -9,11 +9,14 @@ config = configparser.ConfigParser()
 config.read("config.ini")
 user_id = config["DEFAULT"].get("user_id")
 '''
-
+'''
 # Get credentias from Secrets
 USER_ID = os.getenv("USER_ID")
 if not USER_ID:
     raise ValueError("USER_ID not found")
+'''
+
+USER_ID = 123
 
 
 def get_response(method, url, json=None):
@@ -69,11 +72,11 @@ def get_maya_price(quantity):
 
 
 def get_prices(tokens):
-    prices = []
+    prices = {}
     for token in tokens:
         url = f"https://api.coingecko.com/api/v3/simple/price?ids={token}&vs_currencies=usd"
         price = get_response("GET", url)
-        prices.append(price[token]["usd"])
+        prices[token] = price[token]["usd"]
 
     return prices
 
