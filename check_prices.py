@@ -9,7 +9,7 @@ def get_response(method, url, json=None):
         else: # POST
             response = requests.post(url, json=json)
         response.raise_for_status()
-        return response
+        return response.json()
     except requests.exceptions.RequestException as e:
         print(f"HTTP error: {e}")
         return {}
@@ -27,12 +27,12 @@ def get_he_price():
         "params": {
             "contract": "marketpools",
             "table": "pools",
-            "query": {"tokenPair": "LEO:SWAP.HIVE"},
+            "query": {"tokenPair": "SWAP.HIVE:LEO"},
             "limit": 1,
         },
     }
     pool_price = get_response("POST", url, json=payload)
-    return pool_price["result"][0]["basePrice"]
+    return pool_price
 
 
 def get_maya_price():
@@ -53,7 +53,9 @@ def get_maya_price():
 
 def compare_prices():
     he_price = get_he_price()
+    print(he_price)
     maya_price = get_maya_price()
+    print(maya_price)
 
 
 if __name__ == "__main__":
