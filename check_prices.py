@@ -45,8 +45,8 @@ def get_maya_price(quantity):
     token_amount = int(amount * (10 ** 8))
     url = (
       f"https://mayanode.mayachain.info/mayachain/quote/swap?"
-      f"from_asset=ARB.ETH"
-      f"&to_asset=ARB.LEO-0X93864D81175095DD93360FFA2A529B8642F76A6E"
+      f"from_asset=ARB.LEO-0X93864D81175095DD93360FFA2A529B8642F76A6E"
+      f"&to_asset=ARB.ETH"
       f"&amount={token_amount}"
       f"&destination=0x1EdF9F4d2e98A2eb5DFeeC7f07c2e8b6C3FFaA4E"
       f"&streaming_interval=3"
@@ -58,26 +58,33 @@ def get_maya_price(quantity):
     return maya_price
 
 
-def get_eth_price():
-    url = "https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd"
-    eth_price = get_response("GET", url)
-    return eth_price['ethereum']['usd']
+def get_price(token):
+    url = f"https://api.coingecko.com/api/v3/simple/price?ids={token}&vs_currencies=usd"
+    price = get_response("GET", url)
+    return price['hive']['usd']
 
 
 
 def compare_prices():
-    eth_price = get_eth_price()
+    token = "hive"
+    price = get_price(token)
 
-    eth_quantity = 100 / eth_price
-
-    maya_price = get_maya_price(eth_quantity)
-
-    leo_quantity = int(maya_price['expected_amount_out']) // (10 ** 8)
-    print(leo_quantity)
+    token_amount = 100 / price
 
     he_price = get_he_price()
-    leo = he_price[0]['result'][0]['basePrice']
-    eth = he_price[1]['result'][0]['quotePrice']
+    leo_price = he_price[0]['result'][0]['basePrice']
+    eth_price = he_price[1]['result'][0]['quotePrice']
+
+    leo = token_amount * float(leo_price) * 0.99 * 0.895
+
+    maya_price = get_maya_price(leo)
+
+    eth_quantity = int(maya_price['expected_amount_out']) / (10 ** 8)
+
+    new_token_amount = eth_quantity * 0.99 * 0.999 * float(eth_price)
+    print(new_token_amount)
+
+
 
 
 if __name__ == "__main__":
