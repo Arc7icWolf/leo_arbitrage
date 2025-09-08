@@ -1,6 +1,12 @@
 import json
 import requests
 from decimal import Decimal
+import configparser
+
+
+config = configparser.ConfigParser()
+config.read("config.ini")
+user_id = config["DEFAULT"].get("user_id")
 
 
 def get_response(method, url, json=None):
@@ -19,25 +25,22 @@ def get_response(method, url, json=None):
         return {}
 
 
-def get_he_price():
+def get_he_price(token):
     url = "https://api.hive-engine.com/rpc/contracts"
-    tokens = ["SWAP.HIVE:LEO", "SWAP.HIVE:SWAP.ETH"]
-    token_prices = []
-    for token in tokens:
-        payload = {
-            "jsonrpc": "2.0",
-            "id": 1,
-            "method": "find",
-            "params": {
-                "contract": "marketpools",
-                "table": "pools",
-                "query": {"tokenPair": token},
-                "limit": 1,
-            },
-        }
-        token_price = get_response("POST", url, json=payload)
-        token_prices.append(token_price)
-    return token_prices
+    payload = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "find",
+        "params": {
+            "contract": "marketpools",
+            "table": "pools",
+            "query": {"tokenPair": token},
+            "limit": 1,
+        },
+    }
+    token_price = get_response("POST", url, json=payload)
+
+    return token_price["result"][0]["basePrice"]
 
 
 def get_maya_price(quantity):
@@ -45,8 +48,8 @@ def get_maya_price(quantity):
     token_amount = int(amount * (10**8))
     url = (
         f"https://mayanode.mayachain.info/mayachain/quote/swap?"
-        f"from_asset=ARB.LEO-0X93864D81175095DD93360FFA2A529B8642F76A6E"
-        f"&to_asset=ARB.ETH"
+        f"from_asset=ARB.ETH"
+        f"&to_asset=ARB.LEO-0X93864D81175095DD93360FFA2A529B8642F76A6E"
         f"&amount={token_amount}"
         f"&destination=0x1EdF9F4d2e98A2eb5DFeeC7f07c2e8b6C3FFaA4E"
         f"&streaming_interval=3"
@@ -58,33 +61,52 @@ def get_maya_price(quantity):
     return maya_price
 
 
-def get_price(token):
-    url = f"https://api.coingecko.com/api/v3/simple/price?ids={token}&vs_currencies=usd"
-    price = get_response("GET", url)
-    return price["hive"]["usd"]
+def get_prices(tokens):
+    prices = []
+    for token in tokens:
+        url = f"https://api.coingecko.com/api/v3/simple/price?ids={token}&vs_currencies=usd"
+        price = get_response("GET", url)
+        prices.append(price[token]["usd"])
+
+    return prices
+
+
+def notification(content, user_id):
+    webhook_url = "https://discord.com/api/webhooks/1359216089023906063/9PLtNmPUoSwm8UUStyxZzpxVjALWFdKcULtRF3kBJVBzBsVywnXZ4OmvInk8Tt5IhQdW"
+    message = {
+        "content": f"{content}! <@{user_id}>",
+        "allowed_mentions": {"users": [user_id]},
+    }
+    response = get_response("POST", webhook_url, json=message)
+    if response.status_code == 204:
+        print("Notifica inviata con successo!")
+    else:
+        print("Errore nell'invio della notifica:", response.status_code)
 
 
 def compare_prices():
-    token = "hive"
-    price = get_price(token)
+    tokens = ["hive", "ethereum"]
+    prices = get_prices(tokens)
+    one_hundred_dollars = {token: 100 / float(price) for token, price in prices.items()}
 
-    token_amount = 100 / price
+    leo_price = get_he_price("SWAP.HIVE:LEO")
+    he_leo_amount = one_hundred_dollars['hive'] * float(leo_price) * 0.99
 
-    he_price = get_he_price()
-    leo_price = he_price[0]["result"][0]["basePrice"]
-    eth_price = he_price[1]["result"][0]["quotePrice"]
+    print(he_leo_amount)
 
-    leo = token_amount * float(leo_price) * 0.99 * 0.895
+    maya_price = get_maya_price(one_hundred_dollars['ethereum'])
+    arb_leo_amount = int(maya_price["expected_amount_out"]) / (10**8)
+    
+    print(arb_leo_amount)
 
-    maya_price = get_maya_price(leo)
+    threshold = 1.10
 
-    eth_quantity = int(maya_price["expected_amount_out"]) / (10**8)
-
-    new_token_amount = eth_quantity * 0.99 * 0.999 * float(eth_price)
-    print(new_token_amount)
-
-    if new_token_amount * 1.05 > token_amount:
-        print("Let's go!")
+    if he_leo_amount > arb_leo_amount * threshold:
+        print("HIVE --> LEO --> ARB.LEO --> ETH")
+        notification(f"Buy LEO on H-E, Sell LEO on ARB", user_id)
+    elif arb_leo_amount > he_leo_amount * threshold:
+        print("ETH --> ARB.LEO --> LEO --> HIVE")
+        notification(f"Buy LEO on ARB, Sell LEO on H-E", user_id)
     else:
         print("Nothing to see here")
 
