@@ -1,5 +1,6 @@
 import json
 import requests
+from decimal import Decimal
 
 
 def get_response(method, url, json=None):
@@ -20,42 +21,63 @@ def get_response(method, url, json=None):
 
 def get_he_price():
     url = "https://api.hive-engine.com/rpc/contracts"
-    payload = {
-        "jsonrpc": "2.0",
-        "id": 1,
-        "method": "find",
-        "params": {
-            "contract": "marketpools",
-            "table": "pools",
-            "query": {"tokenPair": "SWAP.HIVE:LEO"},
-            "limit": 1,
-        },
-    }
-    pool_price = get_response("POST", url, json=payload)
-    return pool_price
+    tokens = ["SWAP.HIVE:LEO", "SWAP.HIVE:SWAP.ETH"]
+    token_prices = []
+    for token in tokens:
+        payload = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "find",
+            "params": {
+                "contract": "marketpools",
+                "table": "pools",
+                "query": {"tokenPair": token},
+                "limit": 1,
+            },
+        }
+        token_price = get_response("POST", url, json=payload)
+        token_prices.append(token_price)
+    return token_prices
 
 
-def get_maya_price():
+def get_maya_price(quantity):
+    amount = Decimal(quantity)
+    token_amount = int(amount * (10 ** 8))
     url = (
-      "https://mayanode.mayachain.info/mayachain/quote/swap?"
-      "from_asset=ARB.ETH"
-      "&to_asset=ARB.LEO-0X93864D81175095DD93360FFA2A529B8642F76A6E"
-      "&amount=2330000"
-      "&destination=0x1EdF9F4d2e98A2eb5DFeeC7f07c2e8b6C3FFaA4E"
-      "&streaming_interval=3"
-      "&streaming_quantity=0"
-      "&liquidity_tolerance_bps=100"
-      "&affiliate_bps=45&affiliate=wr"
+      f"https://mayanode.mayachain.info/mayachain/quote/swap?"
+      f"from_asset=ARB.ETH"
+      f"&to_asset=ARB.LEO-0X93864D81175095DD93360FFA2A529B8642F76A6E"
+      f"&amount={token_amount}"
+      f"&destination=0x1EdF9F4d2e98A2eb5DFeeC7f07c2e8b6C3FFaA4E"
+      f"&streaming_interval=3"
+      f"&streaming_quantity=0"
+      f"&liquidity_tolerance_bps=100"
+      f"&affiliate_bps=45&affiliate=wr"
     )
     maya_price = get_response("GET", url)
     return maya_price
 
 
+def get_eth_price():
+    url = "https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd"
+    eth_price = get_response("GET", url)
+    return eth_price['ethereum']['usd']
+
+
+
 def compare_prices():
+    eth_price = get_eth_price()
+
+    eth_quantity = 100 / eth_price
+
+    maya_price = get_maya_price(eth_quantity)
+
+    leo_quantity = int(maya_price['expected_amount_out']) // (10 ** 8)
+    print(leo_quantity)
+
     he_price = get_he_price()
-    print(he_price)
-    maya_price = get_maya_price()
-    print(maya_price)
+    leo = he_price[0]['result'][0]['basePrice']
+    eth = he_price[1]['result'][0]['quotePrice']
 
 
 if __name__ == "__main__":
