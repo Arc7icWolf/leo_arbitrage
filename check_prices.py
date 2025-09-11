@@ -9,11 +9,13 @@ config = configparser.ConfigParser()
 config.read("config.ini")
 user_id = config["DEFAULT"].get("user_id")
 '''
-
+'''
 # Get credentias from Secrets
 USER_ID = os.getenv("USER_ID")
 if not USER_ID:
     raise ValueError("USER_ID not found")
+'''
+USER_ID = 500357318613925889
 
 
 def get_response(method, url, json=None):
@@ -23,7 +25,10 @@ def get_response(method, url, json=None):
         else:  # POST
             response = requests.post(url, json=json)
         response.raise_for_status()
-        return response.json()
+        if response.status_code == 204:
+            print("Notifica inviata con successo!")
+        else:
+            return response.json()
     except requests.exceptions.RequestException as e:
         print(f"HTTP error: {e}")
         return {}
@@ -84,11 +89,7 @@ def notification(content):
         "content": f"{content}! <@{USER_ID}>",
         "allowed_mentions": {"users": [USER_ID]},
     }
-    response = get_response("POST", webhook_url, json=message)
-    if response.status_code == 204:
-        print("Notifica inviata con successo!")
-    else:
-        print("Errore nell'invio della notifica:", response.status_code)
+    get_response("POST", webhook_url, json=message)
 
 
 def compare_prices():
@@ -106,7 +107,7 @@ def compare_prices():
     
     print(arb_leo_amount)
 
-    threshold = 1.02
+    threshold = 1.12
 
     if he_leo_amount > arb_leo_amount * threshold:
         print("HIVE --> LEO --> ARB.LEO --> ETH")
