@@ -9,14 +9,11 @@ config = configparser.ConfigParser()
 config.read("config.ini")
 user_id = config["DEFAULT"].get("user_id")
 '''
-'''
+
 # Get credentias from Secrets
 USER_ID = os.getenv("USER_ID")
 if not USER_ID:
     raise ValueError("USER_ID not found")
-'''
-
-USER_ID = 123
 
 
 def get_response(method, url, json=None):
