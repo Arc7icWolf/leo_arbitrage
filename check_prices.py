@@ -3,6 +3,7 @@ import requests
 from decimal import Decimal
 import configparser
 import os
+import sys
 
 '''
 config = configparser.ConfigParser()
@@ -101,7 +102,12 @@ def compare_prices():
     print(he_leo_amount)
 
     maya_price = get_maya_price(one_hundred_dollars['ethereum'])
-    arb_leo_amount = int(maya_price["expected_amount_out"]) / (10**8)
+    arb_leo_amount = maya_price.get("expected_amount_out")
+
+    if not arb_leo_amount:
+        sys.exit("Arb Network halted")
+
+    arb_leo_amount = int(arb_leo_amount) / (10**8)
     
     print(arb_leo_amount)
 
