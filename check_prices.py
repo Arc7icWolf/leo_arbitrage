@@ -111,7 +111,7 @@ def compare_prices():
     
     print(arb_leo_amount)
 
-    threshold = 1.15
+    threshold = 1.16
 
     if he_leo_amount > arb_leo_amount * threshold:
         print("HIVE --> LEO --> ARB.LEO --> ETH")
