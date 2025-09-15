@@ -112,13 +112,14 @@ def compare_prices():
     print(arb_leo_amount)
 
     threshold = 1.17
+    fee = 0.895
 
     if he_leo_amount > arb_leo_amount * threshold:
         print("HIVE --> LEO --> ARB.LEO --> ETH")
-        notification(f"H-E: {he_leo_amount}, ARB: {arb_leo_amount}. Sell {arb_leo_amount * threshold} on ARB")
+        notification(f"H-E: {he_leo_amount}, ARB: {arb_leo_amount}. Sell {he_leo_amount * fee} on ARB")
     elif arb_leo_amount > he_leo_amount * threshold:
         print("ETH --> ARB.LEO --> LEO --> HIVE")
-        notification(f"ARB: {arb_leo_amount}, H-E: {he_leo_amount}. Sell {he_leo_amount * threshold} on H-E")
+        notification(f"ARB: {arb_leo_amount}, H-E: {he_leo_amount}. Sell {arb_leo_amount * fee} on H-E")
     else:
         print("Nothing to see here")
 
