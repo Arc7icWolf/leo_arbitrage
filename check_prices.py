@@ -105,7 +105,8 @@ def compare_prices():
     arb_leo_amount = maya_price.get("expected_amount_out")
 
     if not arb_leo_amount:
-        sys.exit("Arb Network halted")
+        print("Arb Network halted")
+        return
 
     arb_leo_amount = int(arb_leo_amount) / (10**8)
     
