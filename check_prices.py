@@ -112,8 +112,8 @@ def compare_prices():
     
     print(arb_leo_amount)
 
-    threshold = 1.17
-    fee = 0.895
+    threshold = 1.08
+    fee = 0.95
 
     if he_leo_amount > arb_leo_amount * threshold:
         print("HIVE --> LEO --> ARB.LEO --> ETH")
