@@ -5,11 +5,11 @@ import configparser
 import os
 import sys
 
-'''
+"""
 config = configparser.ConfigParser()
 config.read("config.ini")
 user_id = config["DEFAULT"].get("user_id")
-'''
+"""
 
 # Get credentias from Secrets
 USER_ID = os.getenv("USER_ID")
@@ -72,6 +72,21 @@ def get_maya_price(quantity):
     return maya_price
 
 
+def get_hive_price():
+    urls = [
+        "https://api.deathwing.me",
+        "https://api.hive.blog",
+        "https://hive-api.arcange.eu",
+        "https://api.openhive.network",
+    ]
+    for url in urls:
+        data = {"jsonrpc": "2.0", "method": "market_history_api.get_ticker", "id": 1}
+        hive_price = get_response("POST", url, json=data).get("result", [])
+        if not hive_price or len(hive_price) == 0:
+            continue
+        return hive_price["latest"]
+
+
 def get_prices(tokens):
     prices = {}
     for token in tokens:
@@ -92,16 +107,18 @@ def notification(content):
 
 
 def compare_prices():
-    tokens = ["hive", "ethereum"]
+    tokens = ["ethereum"]
+    hive_price = get_hive_price()
     prices = get_prices(tokens)
     one_hundred_dollars = {token: 100 / float(price) for token, price in prices.items()}
+    one_hundred_dollars_hive = 100 / float(hive_price)
 
     leo_price = get_he_price("SWAP.HIVE:LEO")
-    he_leo_amount = one_hundred_dollars['hive'] * float(leo_price) * 0.99
+    he_leo_amount = one_hundred_dollars_hive * float(leo_price) * 0.99
 
     print(he_leo_amount)
 
-    maya_price = get_maya_price(one_hundred_dollars['ethereum'])
+    maya_price = get_maya_price(one_hundred_dollars["ethereum"])
     arb_leo_amount = maya_price.get("expected_amount_out")
 
     if not arb_leo_amount:
@@ -109,7 +126,7 @@ def compare_prices():
         return
 
     arb_leo_amount = int(arb_leo_amount) / (10**8)
-    
+
     print(arb_leo_amount)
 
     threshold = 1.08
@@ -117,10 +134,14 @@ def compare_prices():
 
     if he_leo_amount > arb_leo_amount * threshold:
         print("HIVE --> LEO --> ARB.LEO --> ETH")
-        notification(f"H-E: {he_leo_amount}, ARB: {arb_leo_amount}. Sell {he_leo_amount * fee} on ARB")
+        notification(
+            f"H-E: {he_leo_amount}, ARB: {arb_leo_amount}. Sell {he_leo_amount * fee} on ARB"
+        )
     elif arb_leo_amount > he_leo_amount * threshold:
         print("ETH --> ARB.LEO --> LEO --> HIVE")
-        notification(f"ARB: {arb_leo_amount}, H-E: {he_leo_amount}. Sell {arb_leo_amount * fee} on H-E")
+        notification(
+            f"ARB: {arb_leo_amount}, H-E: {he_leo_amount}. Sell {arb_leo_amount * fee} on H-E"
+        )
     else:
         print("Nothing to see here")
 
